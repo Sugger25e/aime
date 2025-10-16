@@ -280,48 +280,50 @@ export default function Home() {
                   setDraft(null);
                   setAdding(false);
                 }}>
-                  <label className="field">
-                    <span>Hazard</span>
-                    <select className="select-input" value={draft.hazardType} onChange={(e) => setDraft((d) => ({ ...d, hazardType: e.target.value }))}>
-                      {HAZARDS.map((hz) => (
-                        <option key={hz} value={hz}>{hz}</option>
-                      ))}
-                    </select>
-                  </label>
-                  {draft.targetId ? (
-                    <div className="field">
-                      <span>Grade/Section</span>
-                      <div>{draft.section}</div>
-                    </div>
-                  ) : (
+                  <div className="modal-body">
                     <label className="field">
-                      <span>Grade/Section</span>
-                      <select className="select-input" value={draft.section} onChange={(e) => setDraft((d) => ({ ...d, section: e.target.value }))}>
-                        {SECTIONS.map((s) => (
-                          <option key={s} value={s}>{s}</option>
+                      <span>Hazard</span>
+                      <select className="select-input" value={draft.hazardType} onChange={(e) => setDraft((d) => ({ ...d, hazardType: e.target.value }))}>
+                        {HAZARDS.map((hz) => (
+                          <option key={hz} value={hz}>{hz}</option>
                         ))}
                       </select>
                     </label>
-                  )}
-                  <label className="field">
-                    <span>Photo (camera only)</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={(e) => {
-                        const file = e.target.files && e.target.files[0];
-                        if (!file) return;
-                        if (!file.type.startsWith('image/')) return;
-                        const reader = new FileReader();
-                        reader.onload = () => setDraft((d) => ({ ...d, photoDataUrl: reader.result }));
-                        reader.readAsDataURL(file);
-                      }}
-                    />
-                  </label>
-                  {draft.photoDataUrl && (
-                    <img src={draft.photoDataUrl} alt="Preview" className="photo-preview" />
-                  )}
+                    {draft.targetId ? (
+                      <div className="field">
+                        <span>Grade/Section</span>
+                        <div>{draft.section}</div>
+                      </div>
+                    ) : (
+                      <label className="field">
+                        <span>Grade/Section</span>
+                        <select className="select-input" value={draft.section} onChange={(e) => setDraft((d) => ({ ...d, section: e.target.value }))}>
+                          {SECTIONS.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                    <label className="field">
+                      <span>Photo (camera only)</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={(e) => {
+                          const file = e.target.files && e.target.files[0];
+                          if (!file) return;
+                          if (!file.type.startsWith('image/')) return;
+                          const reader = new FileReader();
+                          reader.onload = () => setDraft((d) => ({ ...d, photoDataUrl: reader.result }));
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+                    {draft.photoDataUrl && (
+                      <img src={draft.photoDataUrl} alt="Preview" className="photo-preview" />
+                    )}
+                  </div>
                   <div className="modal-actions">
                     <button type="button" className="btn" onClick={() => { setDraft(null); setAdding(false); }}>Cancel</button>
                     <button type="submit" className="btn btn-primary">Save</button>
@@ -336,16 +338,18 @@ export default function Home() {
                 return (
                   <>
                     <h2 className="modal-title">Hazard details</h2>
-                    <ul className="details-list">
-                      {reports.map((r, idx) => (
-                        <li key={idx} className="details-item">
-                          <div><strong>Type:</strong> {r.hazardType}</div>
-                          <div><strong>Section:</strong> {r.section}</div>
-                          <div><strong>Date:</strong> {formatDate(r.createdAt)}</div>
-                          {r.photoDataUrl && <img src={r.photoDataUrl} alt="Attachment" className="photo-preview" />}
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="modal-body">
+                      <ul className="details-list">
+                        {reports.map((r, idx) => (
+                          <li key={idx} className="details-item">
+                            <div><strong>Type:</strong> {r.hazardType}</div>
+                            <div><strong>Section:</strong> {r.section}</div>
+                            <div><strong>Date:</strong> {formatDate(r.createdAt)}</div>
+                            {r.photoDataUrl && <img src={r.photoDataUrl} alt="Attachment" className="photo-preview" />}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                     <div className="modal-actions">
                       <button type="button" className="btn" onClick={() => {
                         // Start a new report on this same pin; reuse the same section as already marked
