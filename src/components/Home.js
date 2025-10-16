@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./Home.css";
 import floorplan from '../assets/floorpan.jpg'
 
@@ -8,6 +8,9 @@ export default function Home() {
   const [hazards, setHazards] = useState([]);
   const [draft, setDraft] = useState(null); // {xPct, yPct, hazardType, section, photoDataUrl, targetId?}
   const [activeId, setActiveId] = useState(null);
+  // Zoom state (scroll to move)
+  const [scale, setScale] = useState(1);
+  const wrapRef = useRef(null);
 
   const HAZARDS = useMemo(() => [
     "Wet floor",
@@ -23,6 +26,7 @@ export default function Home() {
     "Grade 8 - Arthropoda",
     "Grade 8 - Mollusca",
     "Grade 8 - Chordata",
+    "Grade 8 - Porifera",
     "Grade 9 - Dalton",
     "Grade 9 - Mendeleev",
     "Grade 9 - Thomson",
@@ -48,6 +52,12 @@ export default function Home() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Smaller default zoom on small screens, then bump it +3 steps for mobile (0.7 + 0.3 = 1.0)
+  useEffect(() => {
+    const isPhone = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+    if (isPhone) setScale(1.0);
   }, []);
 
   // Helpers
@@ -159,55 +169,60 @@ export default function Home() {
       {menuOpen && <div className="scrim" onClick={() => setMenuOpen(false)} aria-hidden="true" />}
 
       <div className={`content ${adding ? "add-mode" : ""}`}>
-        <div
-          className="floor-wrap"
-          onClick={(e) => {
-            if (!adding) return;
-            const wrap = e.currentTarget;
-            const rect = wrap.getBoundingClientRect();
-            const isPhone = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
-            const offsetX = e.clientX - rect.left;
-            const offsetY = e.clientY - rect.top;
-            let xPct, yPct;
-            if (isPhone) {
-              // Inverse rotate -90deg mapping from rotated bbox to unrotated coords
-              const wR = rect.width; // rotated bbox width
-              const hR = rect.height; // rotated bbox height
-              const cx = wR / 2, cy = hR / 2;
-              const vx = offsetX - cx;
-              const vy = offsetY - cy;
-              const ux = vy + hR / 2; // unrotated x in [0..hR]
-              const uy = -vx + wR / 2; // unrotated y in [0..wR]
-              xPct = Math.min(1, Math.max(0, ux / hR));
-              yPct = Math.min(1, Math.max(0, uy / wR));
-            } else {
-              xPct = Math.min(1, Math.max(0, offsetX / rect.width));
-              yPct = Math.min(1, Math.max(0, offsetY / rect.height));
-            }
-            setDraft({ xPct, yPct, hazardType: HAZARDS[0], section: SECTIONS[0], photoDataUrl: null, targetId: null });
-          }}
-        >
-          <img src={floorplan} alt="Floor" className="floor" />
+  <div className="floor-wrap" ref={wrapRef}>
+          <div
+            className="floor-stage"
+            style={{ "--zoom": scale }}
+            onClick={(e) => {
+              if (!adding) return;
+              const stage = e.currentTarget;
+              const wrap = stage.parentElement; // scroll container
+              const rect = stage.getBoundingClientRect();
+              const offsetX = e.clientX - rect.left + (wrap?.scrollLeft || 0);
+              const offsetY = e.clientY - rect.top + (wrap?.scrollTop || 0);
+              const totalW = stage.scrollWidth || stage.offsetWidth || 1;
+              const totalH = stage.scrollHeight || stage.offsetHeight || 1;
+              const xPct = Math.min(1, Math.max(0, offsetX / totalW));
+              const yPct = Math.min(1, Math.max(0, offsetY / totalH));
+              setDraft({ xPct, yPct, hazardType: HAZARDS[0], section: SECTIONS[0], photoDataUrl: null, targetId: null });
+            }}
+            // Scroll (in parent) is used to move around; no pointer handlers here
+          >
+            <img src={floorplan} alt="Floor" className="floor" />
 
-          {/* Existing pins */}
-          {hazards.map((h) => (
-            <button
-              key={h.id}
-              className="pin"
-              style={{ left: `${h.xPct * 100}%`, top: `${h.yPct * 100}%`, color: pinColor(h) }}
-              aria-label="Hazard pin"
-              onClick={(ev) => { ev.stopPropagation(); setActiveId(h.id); }}
-            >
-              <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
+            {/* Existing pins */}
+            {hazards.map((h) => (
+              <button
+                key={h.id}
+                className="pin"
+                style={{ left: `${h.xPct * 100}%`, top: `${h.yPct * 100}%`, color: pinColor(h) }}
+                aria-label="Hazard pin"
+                onClick={(ev) => { ev.stopPropagation(); setActiveId(h.id); }}
+              >
+                <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
+              </button>
+            ))}
+
+            {/* Draft pin preview */}
+            {draft && (
+              <div className="pin pin--preview" style={{ left: `${draft.xPct * 100}%`, top: `${draft.yPct * 100}%` }}>
+                <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
+              </div>
+            )}
+          </div>
+
+          {/* Zoom controls (fixed like FAB) */}
+          <div className="zoom-controls" aria-label="Zoom controls">
+            <button className="zoom-btn" onClick={() => setScale((s) => Math.max(0.5, s - 0.1))} aria-label="Zoom out">
+              <i className="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i>
             </button>
-          ))}
-
-          {/* Draft pin preview */}
-          {draft && (
-            <div className="pin pin--preview" style={{ left: `${draft.xPct * 100}%`, top: `${draft.yPct * 100}%` }}>
-              <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
-            </div>
-          )}
+            <button className="zoom-btn" onClick={() => setScale((s) => Math.min(3, s + 0.1))} aria-label="Zoom in">
+              <i className="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i>
+            </button>
+            <button className="zoom-btn" onClick={() => { setScale(1); if (wrapRef.current) { wrapRef.current.scrollTo({ left: 0, top: 0, behavior: 'auto' }); } }} aria-label="Reset view">
+              <i className="fa-solid fa-rotate" aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
       </div>
 

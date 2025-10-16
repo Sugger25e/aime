@@ -158,9 +158,42 @@
 .floor-wrap {
   position: relative;
   width: min(1200px, 100%);
+  max-height: calc(100dvh - var(--navH) - var(--bottomH));
+  overflow: auto; /* scroll to move */
 }
 .floor-wrap .floor { width: 100%; height: auto; display: block; }
 .add-mode .floor-wrap { cursor: crosshair; }
+
+/* Zoomable/pannable stage wraps the floor and pins */
+.floor-stage {
+  position: relative;
+  transform-origin: 0 0;
+  width: calc(100% * var(--zoom, 1));
+}
+
+/* Zoom controls */
+.zoom-controls {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + var(--bottomH));
+  display: grid;
+  gap: 6px;
+  z-index: 35;
+}
+.zoom-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  color: #111;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.zoom-btn:hover { background: #f8fafc; }
+.zoom-btn:active { background: #eef2f7; }
 
 /* Pins */
 .pin {
@@ -218,18 +251,9 @@
 
 @media (max-width: 640px) {
   .content { overflow: hidden; padding-left: 0; padding-right: 0; }
-  /* Rotate the whole wrap so pins align with the image */
-  .floor-wrap {
-    position: relative;
-    left: 50%;
-    transform: translateX(-50%) rotate(90deg);
-    transform-origin: center center;
-    width: auto;
-    height: min(100vw, calc(100dvh - var(--navH) - var(--bottomH)));
-  }
-  .floor-wrap .floor { width: auto; height: 100%; }
-  /* Keep pin icon upright while its container is rotated */
-  .pin { transform: translate(-50%, -100%) rotate(-90deg); }
+  .floor-wrap { width: 100%; max-height: calc(100dvh - var(--navH) - var(--bottomH)); }
+  .floor-wrap .floor { width: 100%; height: auto; }
+  .pin { transform: translate(-50%, -100%); }
 }
 
 .bottom-bar {
@@ -284,6 +308,7 @@
   .navbar { height: var(--navH); }
   .app-title { font-size: 26px; }
   .fab { left: 24px; bottom: 24px; }
+  .zoom-controls { bottom: 24px; right: 24px; }
   .bottom-bar { display: none; }
   .navbar-actions { display: flex; }
   .icon-button i { font-size: 24px; }
