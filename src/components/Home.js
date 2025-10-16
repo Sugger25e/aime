@@ -176,12 +176,12 @@ export default function Home() {
             onClick={(e) => {
               if (!adding) return;
               const stage = e.currentTarget;
-              const wrap = stage.parentElement; // scroll container
               const rect = stage.getBoundingClientRect();
-              const offsetX = e.clientX - rect.left + (wrap?.scrollLeft || 0);
-              const offsetY = e.clientY - rect.top + (wrap?.scrollTop || 0);
-              const totalW = stage.scrollWidth || stage.offsetWidth || 1;
-              const totalH = stage.scrollHeight || stage.offsetHeight || 1;
+              // rect already accounts for scroll, so do NOT add scrollLeft/Top again
+              const offsetX = e.clientX - rect.left;
+              const offsetY = e.clientY - rect.top;
+              const totalW = stage.offsetWidth || 1;
+              const totalH = stage.offsetHeight || 1;
               const xPct = Math.min(1, Math.max(0, offsetX / totalW));
               const yPct = Math.min(1, Math.max(0, offsetY / totalH));
               setDraft({ xPct, yPct, hazardType: HAZARDS[0], section: SECTIONS[0], photoDataUrl: null, targetId: null });
